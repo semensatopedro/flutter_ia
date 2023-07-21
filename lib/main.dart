@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_ia/colors.dart';
 import 'package:flutter_ia/controller/chat_controller.dart';
+import 'package:flutter_ia/theme.dart';
 import 'package:get/get.dart';
 
 void main() {
@@ -14,13 +15,12 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return GetMaterialApp(
       title: 'Aliança AI Tryout',
+      themeMode: ThemeMode.system,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
-        useMaterial3: true,
-      ),
       home: const MyHomePage(title: 'Aliança AI Tryout'),
     );
   }
@@ -36,11 +36,14 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  final ThemeController _themeController = Get.put(ThemeController());
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: AppColors.primary,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        shadowColor: Colors.transparent,
         title: Container(
           width: 900,
           child: Row(
@@ -50,12 +53,12 @@ class _MyHomePageState extends State<MyHomePage> {
                 padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
                 child: Image.asset('assets/images/logo.png', width: 100),
               ),
-              const Text("Aliança AI Tryout",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontFamily: 'SourceSansPro',
-                  )),
+              Obx(
+                () => Switch(
+                  value: _getSwitchValue(),
+                  onChanged: (_) => {_themeController.toggleTheme()},
+                ),
+              ),
             ],
           ),
         ),
@@ -63,80 +66,54 @@ class _MyHomePageState extends State<MyHomePage> {
       body: GetBuilder<ChatController>(
           init: ChatController(),
           builder: (chatController) {
-            return LayoutBuilder(
-              builder: (context, constraints) {
-                if (constraints.maxWidth > 600) {
-                  // Larger screen (web) - Use Row
-                  return Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Expanded(
-                        // Use the ListView.builder to display the dynamic list
-                        child: ListView.builder(
-                          itemCount: chatController.messages.length,
-                          itemBuilder: (context, index) {
-                            return ListTile(
-                              tileColor: Colors.grey[200],
-                              title: Center(
-                                child: SizedBox(
-                                  width: 900,
-                                  child: Align(
-                                    alignment:
-                                        chatController.messages[index].isUser
-                                            ? Alignment.centerRight
-                                            : Alignment.centerLeft,
-                                    child: Text(chatController
-                                        .messages[index].message
-                                        .toString()),
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Expanded(
+                  // Use the ListView.builder to display the dynamic list
+                  child: ListView.builder(
+                    itemCount: chatController.messages.length,
+                    itemBuilder: (context, index) {
+                      return ListTile(
+                        //A logica abaixo tem de ser ALTERADA para imprimir a resposta do usuário
+                        tileColor: index % 2 != 0
+                            ? Theme.of(context).dialogBackgroundColor
+                            : Theme.of(context).dividerColor,
+                        title: Center(
+                          child: SizedBox(
+                            width: 900,
+                            child: Align(
+                              alignment:
+                                  //A logica abaixo tem de ser ALTERADA para imprimir a resposta do usuário
+                                  index % 2 == 0
+                                      ? Alignment.centerRight
+                                      : Alignment.centerLeft,
+                              child: Text(chatController.messages[index].message
+                                  .toString()),
+                            ),
+                          ),
                         ),
-                      ),
-                      Center(
-                          child: SizedBox(width: 900, child: ChatGptInput())),
-                    ],
-                  );
-                } else {
-                  return Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Expanded(
-                        // Use the ListView.builder to display the dynamic list
-                        child: ListView.builder(
-                          itemCount: chatController.messages.length,
-                          itemBuilder: (context, index) {
-                            return ListTile(
-                              tileColor: Colors.grey[200],
-                              title: Center(
-                                child: SizedBox(
-                                  width: 900,
-                                  child: Align(
-                                    alignment:
-                                        chatController.messages[index].isUser
-                                            ? Alignment.centerRight
-                                            : Alignment.centerLeft,
-                                    child: Text(chatController
-                                        .messages[index].message
-                                        .toString()),
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      Center(
-                          child: SizedBox(width: 900, child: ChatGptInput())),
-                    ],
-                  );
-                }
-              },
+                        contentPadding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                      );
+                    },
+                  ),
+                ),
+                Center(child: SizedBox(width: 900, child: ChatGptInput())),
+              ],
             );
           }),
     );
+  }
+
+  bool _getSwitchValue() {
+    if (_themeController.themeMode.value == ThemeMode.system) {
+      // If the theme mode is system, determine the switch value based on the platform's brightness preference
+      final brightness = MediaQuery.of(Get.context!).platformBrightness;
+      return brightness == Brightness.dark;
+    } else {
+      // If the theme mode is manually set, return the corresponding switch value
+      return _themeController.themeMode.value == ThemeMode.dark;
+    }
   }
 }
 
@@ -169,8 +146,8 @@ class _ChatGptInputState extends State<ChatGptInput> {
       child: Container(
         margin: EdgeInsets.all(8.0),
         decoration: BoxDecoration(
-          color: AppColors.inputText,
-          borderRadius: BorderRadius.circular(8.0),
+          color: Theme.of(context).inputDecorationTheme.fillColor,
+          borderRadius: BorderRadius.circular(10),
         ),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
@@ -182,7 +159,7 @@ class _ChatGptInputState extends State<ChatGptInput> {
                 ),
                 child: SingleChildScrollView(
                   controller: _scrollController,
-                  padding: EdgeInsets.all(12),
+                  padding: EdgeInsets.all(15),
                   child: TextField(
                     controller: _textEditingController,
                     maxLines: null,
@@ -203,7 +180,10 @@ class _ChatGptInputState extends State<ChatGptInput> {
                 child: FloatingActionButton(
                   mini: true,
                   onPressed: _handleSendMessage,
-                  child: Icon(Icons.send),
+                  child: Icon(
+                    Icons.send,
+                    color: Theme.of(context).iconTheme.color,
+                  ),
                 ),
               ),
             ],
