@@ -76,19 +76,19 @@ class _MyHomePageState extends State<MyHomePage> {
                     itemBuilder: (context, index) {
                       return ListTile(
                         //A logica abaixo tem de ser ALTERADA para imprimir a resposta do usuário
-                        tileColor: index % 2 != 0
-                            ? Theme.of(context).dialogBackgroundColor
-                            : Theme.of(context).dividerColor,
+                        tileColor: chatController.messages[index].role != "user"
+                            ? Theme.of(context).dividerColor
+                            : Theme.of(context).dialogBackgroundColor,
                         title: Center(
                           child: SizedBox(
                             width: 900,
                             child: Align(
                               alignment:
                                   //A logica abaixo tem de ser ALTERADA para imprimir a resposta do usuário
-                                  index % 2 == 0
+                                  chatController.messages[index].role == "user"
                                       ? Alignment.centerRight
                                       : Alignment.centerLeft,
-                              child: Text(chatController.messages[index].message
+                              child: Text(chatController.messages[index].content
                                   .toString()),
                             ),
                           ),
@@ -195,9 +195,11 @@ class _ChatGptInputState extends State<ChatGptInput> {
 
   // Function to handle sending the message
   void _handleSendMessage() {
-    print(_textEditingController.text);
-    chatController.addMessage(_textEditingController.text, true);
-    print(chatController.messages);
+    //print(_textEditingController.text);
+    chatController.addMessage(_textEditingController.text, "user");
+    //chatController.fetchData();
+    chatController.promptGPT(_textEditingController.text);
+    // print(chatController.messages);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _textEditingController.clear();
     });

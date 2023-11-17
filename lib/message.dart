@@ -1,9 +1,16 @@
 class Message {
-  bool isUser;
-  String message;
+  String role;
+  String content;
 
   Message({
-    required this.isUser,
-    required this.message,
+    required this.role,
+    required this.content,
   });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'role': role,
+      'content': content,
+    };
+  }
 }
